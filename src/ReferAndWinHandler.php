@@ -314,35 +314,41 @@ final class ReferAndWinHandler
         $wsUrl = $wsBase . $sep . 'rec=' . rawurlencode($recId) . '&sid=' . rawurlencode($sid);
 
         $instructions = $isRerecord
-            ? 'Let us try again. Please say your friend\'s name and address, and press pound when finished.'
+            ? 'Let us try again. Please say your friend\'s name and address after the tone, and press pound when finished.'
             : (string) ($this->config['prompts']['record_instructions']
-                ?? 'Please leave a short voice message with your friend\'s name and address. Press pound when you are finished.');
+                ?? 'Please leave a short voice message with your friend\'s name and address after the tone. Press pound when you are finished.');
 
-        $startPrompt = (string) ($this->config['prompts']['record_start_beep_prompt']
-            ?? 'Please begin speaking now, and press pound when finished.');
+        $beepUrl = trim((string) ($this->config['beep_url'] ?? ''));
+        if ($beepUrl === '') {
+            $beepUrl = Helpers::buildUrl((string) ($this->config['app_base_url'] ?? ''), 'beep.wav');
+        }
+
+        $track = isset($this->config['ws_stream_track']) ? (string) $this->config['ws_stream_track'] : 'inbound';
 
         $this->logger->info('Starting Refer & Win voice recording stream.', [
             'sid' => $sid,
             'rec_id' => $recId,
             'rerecord' => $isRerecord,
             'max_seconds' => $maxRecSeconds,
+            'ws_url' => $wsUrl,
+            'beep_url' => $beepUrl,
         ]);
 
         return $xml
             ->say($instructions)
-            ->startStream('rec_' . $recId, $wsUrl, 'inbound', [
+            ->startStream('rec_' . $recId, $wsUrl, $track !== '' ? $track : null, [
                 'recId' => $recId,
                 'sid' => $sid,
                 'callId' => (string) ($updated['orig_call_id'] ?? ''),
                 'maxSeconds' => (string) $maxRecSeconds,
             ])
+            ->play($beepUrl)
             ->gather([
                 'input' => 'dtmf',
                 'numDigits' => 1,
                 'timeout' => $maxRecSeconds,
                 'action' => $this->actionUrl('record_done', $sid),
-            ], static function (XmlResponse $nested) use ($startPrompt): void {
-                $nested->say($startPrompt);
+            ], static function (XmlResponse $nested): void {
             })
             ->toXml();
     }

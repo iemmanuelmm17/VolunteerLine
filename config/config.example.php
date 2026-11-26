@@ -48,6 +48,8 @@ return [
     'refer_confirm_before_send' => true,   // true = play back recording & ask 1=confirm / 2=re-record
     'discard_on_early_hangup' => true,     // true = discard email if caller hangs up before completing/confirming
     'keep_recordings' => true,             // true = keep .wav files on disk after sending email
+    'ws_stream_track' => 'inbound',        // 'inbound', 'outbound', 'both', or '' to omit track attribute
+    'beep_url' => '',                      // Optional custom beep .wav URL; defaults to {app_base_url}/beep.wav
 
     // Email recipients (separate lists for each option; accepts string or array of strings)
     'call_and_win_email_to' => [
@@ -81,7 +83,6 @@ return [
         'refer_and_win_welcome' => 'Welcome to Refer and Win. Please enter your team number, up to {max_digits} digits.',
         'enter_call_count' => 'Please enter the number of calls you made.',
         'enter_friend_phone' => 'Please enter your friend\'s 10 digit phone number.',
-        'record_instructions' => 'Please leave a short voice message with your friend\'s name and address. Press pound when you are finished.',
-        'record_start_beep_prompt' => 'Please begin speaking now, and press pound when finished.',
+        'record_instructions' => 'Please leave a short voice message with your friend\'s name and address after the tone. Press pound when you are finished.',
     ],
 ];

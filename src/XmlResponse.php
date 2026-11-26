@@ -77,7 +77,7 @@ final class XmlResponse
     /**
      * @param array<string, string> $parameters
      */
-    public function startStream(string $name, string $url, string $track = 'inbound', array $parameters = []): self
+    public function startStream(string $name, string $url, ?string $track = 'inbound', array $parameters = []): self
     {
         $paramXml = '';
         foreach ($parameters as $paramName => $paramValue) {
@@ -87,11 +87,15 @@ final class XmlResponse
             ]);
         }
 
-        $streamXml = $this->element('Stream', [
+        $streamAttrs = [
             'name' => $name,
             'url' => $url,
-            'track' => $track,
-        ], $paramXml);
+        ];
+        if ($track !== null && $track !== '') {
+            $streamAttrs['track'] = $track;
+        }
+
+        $streamXml = $this->element('Stream', $streamAttrs, $paramXml);
 
         $this->children[] = $this->element('Start', [], $streamXml);
 

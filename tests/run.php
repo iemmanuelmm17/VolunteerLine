@@ -195,6 +195,7 @@ try {
     $xml = $referWin->handle(['step' => 'phone_confirmed', 'sid' => $sid2, 'Digits' => '1']);
     $sx = simplexml_load_string($xml);
     assertTrue(isset($sx->Start->Stream), 'Starts WebSocket <Stream> for recording');
+    assertTrue(isset($sx->Play) && str_contains((string) $sx->Play, 'beep.wav'), 'Plays beep.wav indicator');
     [, $q] = parseActionParams($xml);
     assertSame('record_done', $q['step'], 'Gather # goes to record_done');
 

@@ -86,10 +86,12 @@ final class WebSocketServer
                         'started_at' => null,
                         'last_activity_at' => microtime(true),
                         'mulaw_buffer' => '',
+                        'media_packets' => 0,
                         'stopped_cleanly' => false,
                         'max_duration_reached' => false,
                         'finalized' => false,
                     ];
+                    $this->logger->info('WebSocket TCP client accepted.', ['client_id' => $id]);
                 }
             }
 
@@ -251,6 +253,7 @@ final class WebSocketServer
         }
 
         $wsKey = null;
+        $wsProtocol = null;
         foreach (array_slice($lines, 1) as $line) {
             $pos = strpos($line, ':');
             if ($pos === false) {
@@ -260,11 +263,16 @@ final class WebSocketServer
             $val = trim(substr($line, $pos + 1));
             if ($name === 'sec-websocket-key') {
                 $wsKey = $val;
-                break;
+            } elseif ($name === 'sec-websocket-protocol') {
+                $wsProtocol = $val;
             }
         }
 
         if ($wsKey === null || $wsKey === '') {
+            $this->logger->warning('WebSocket handshake failed: missing Sec-WebSocket-Key.', [
+                'client_id' => $id,
+                'request_line' => $requestLine,
+            ]);
             @fwrite($this->clients[$id]['socket'], "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
             $this->disconnectClient($id, false);
             return;
@@ -274,9 +282,25 @@ final class WebSocketServer
         $response = "HTTP/1.1 101 Switching Protocols\r\n"
             . "Upgrade: websocket\r\n"
             . "Connection: Upgrade\r\n"
-            . "Sec-WebSocket-Accept: {$accept}\r\n\r\n";
+            . "Sec-WebSocket-Accept: {$accept}\r\n";
+
+        if ($wsProtocol !== null && $wsProtocol !== '') {
+            $firstProto = trim(explode(',', $wsProtocol)[0]);
+            if ($firstProto !== '') {
+                $response .= "Sec-WebSocket-Protocol: {$firstProto}\r\n";
+            }
+        }
+
+        $response .= "\r\n";
 
         @fwrite($this->clients[$id]['socket'], $response);
+
+        $this->logger->info('WebSocket handshake completed.', [
+            'client_id' => $id,
+            'request_line' => $requestLine,
+            'rec_id' => $this->clients[$id]['rec_id'],
+            'sid' => $this->clients[$id]['sid'],
+        ]);
 
         $this->clients[$id]['handshake_done'] = true;
         $this->clients[$id]['http_buffer'] = '';
@@ -377,6 +401,8 @@ final class WebSocketServer
                     'sid' => $this->clients[$id]['sid'],
                     'stream_id' => $this->clients[$id]['stream_id'],
                     'call_id' => $this->clients[$id]['call_id'],
+                    'tracks' => $start['tracks'] ?? null,
+                    'mediaFormat' => $start['mediaFormat'] ?? null,
                 ]);
                 break;
 
@@ -404,6 +430,14 @@ final class WebSocketServer
                     $raw = base64_decode($b64, true);
                     if ($raw !== false) {
                         $this->clients[$id]['mulaw_buffer'] .= $raw;
+                        $this->clients[$id]['media_packets']++;
+                        if ($this->clients[$id]['media_packets'] === 1) {
+                            $this->logger->info('First WebSocket media packet received.', [
+                                'rec_id' => $this->clients[$id]['rec_id'],
+                                'track' => $media['track'] ?? null,
+                                'bytes' => strlen($raw),
+                            ]);
+                        }
                     }
                 }
                 break;

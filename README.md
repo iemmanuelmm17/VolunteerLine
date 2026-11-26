@@ -125,10 +125,12 @@ NetSapiens `<Stream>` requires **`wss://`** (TLS WebSocket) and `<Play>` works b
 
        # Proxy wss://voice.yourdomain.org/ws -> ws://127.0.0.1:8090
        ProxyPreserveHost On
-       ProxyPass "/ws" "ws://127.0.0.1:8090/"
-       ProxyPassReverse "/ws" "ws://127.0.0.1:8090/"
+       ProxyPass "/ws" "ws://127.0.0.1:8090"
+       ProxyPassReverse "/ws" "ws://127.0.0.1:8090"
    </VirtualHost>
    ```
+
+   > **Note:** If you host VolunteerLine in a subfolder (for example `https://yourdomain.org/volunteerline/public`), adjust `app_base_url` accordingly and match the `ProxyPass` path to your `ws_public_url` path (e.g. `ProxyPass "/volunteerline/ws" "ws://127.0.0.1:8090"`).
 
    > **Important:** Ensure `D:/www/volunteerline/config`, `src`, `storage`, and `logs` are **above** `DocumentRoot` (`public/`), as shown above, so they can never be browsed over HTTP.
 
