@@ -48,6 +48,7 @@ return [
     'refer_confirm_before_send' => true,   // true = play back recording & ask 1=confirm / 2=re-record
     'discard_on_early_hangup' => true,     // true = discard email if caller hangs up before completing/confirming
     'keep_recordings' => true,             // true = keep .wav files on disk after sending email
+    'playback_wav_codec' => 'pcm_mulaw',   // WAV codec served to NetSapiens <Play>: 'pcm_mulaw' (8kHz G.711 u-law) or 'pcm_s16le'
     'ws_stream_track' => 'inbound',        // 'inbound', 'outbound', 'both', or '' to omit track attribute
     'beep_url' => '',                      // Optional custom beep .wav URL; defaults to {app_base_url}/beep.wav
 

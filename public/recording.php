@@ -43,11 +43,21 @@ try {
         exit('Not found');
     }
 
-    $size = (int) filesize($wavPath);
+    $playbackCodec = strtolower((string) ($config['playback_wav_codec'] ?? 'pcm_mulaw'));
+    $wavPayload = @file_get_contents($wavPath);
+    if ($wavPayload === false) {
+        http_response_code(500);
+        exit('Server error');
+    }
+
+    if ($playbackCodec === 'pcm_mulaw') {
+        $wavPayload = WavConverter::pcm16WavToMulawWav($wavPayload);
+    }
+
     header('Content-Type: audio/wav');
-    header('Content-Length: ' . $size);
+    header('Content-Length: ' . strlen($wavPayload));
     header('Cache-Control: no-store');
-    readfile($wavPath);
+    echo $wavPayload;
 } catch (\Throwable $e) {
     @error_log('Recording serve error: ' . $e->getMessage());
     http_response_code(500);

@@ -112,6 +112,25 @@ try {
     assertSame((-32124) & 0xFFFF, $samples[2], '0x00 mu-law -> -32124 PCM');
     assertSame(32124, $samples[3], '0x80 mu-law -> +32124 PCM');
 
+    // 2b. WavConverter PCM16 -> PCMU (G.711 mu-law WAV for <Play>)
+    $mulawWav = WavConverter::pcm16WavToMulawWav($wav);
+    assertSame('RIFF', substr($mulawWav, 0, 4), 'PCMU WAV RIFF header');
+    assertSame(58 + 3 + 1, strlen($mulawWav), 'PCMU WAV padded odd size');
+    $mulawFmt = unpack('vtag/vch/Vsrate/Vbrate/vbalign/vbits', substr($mulawWav, 20, 16));
+    assertSame(7, $mulawFmt['tag'], 'PCMU WAV format tag 7');
+    assertSame(1, $mulawFmt['ch'], 'PCMU WAV mono');
+    assertSame(8000, $mulawFmt['srate'], 'PCMU WAV 8000 Hz');
+    assertSame(8000, $mulawFmt['brate'], 'PCMU WAV byte rate 8000');
+    assertSame(1, $mulawFmt['balign'], 'PCMU WAV block align 1');
+    assertSame(8, $mulawFmt['bits'], 'PCMU WAV 8-bit companded');
+    assertSame("\xFF\x00\x80", substr($mulawWav, 58, 3), 'PCMU round-trip bytes');
+
+    $beepBytes = file_get_contents(__DIR__ . '/../public/beep.wav');
+    assertTrue(is_string($beepBytes) && strlen($beepBytes) > 58, 'beep.wav exists');
+    $beepFmt = unpack('vtag/vch/Vsrate', substr($beepBytes, 20, 8));
+    assertSame(7, $beepFmt['tag'], 'beep.wav uses PCMU codec 7');
+    assertSame(8000, $beepFmt['srate'], 'beep.wav uses 8000 Hz');
+
     // 3. WebSocketServer frame decoding & handshake key
     assertSame(
         's3pPLMBiTxaQ9kYGzzhZRbK+xOo=',
