@@ -1,0 +1,9 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Optional clean URLs:
+    # /call-and-win -> call-and-win.php
+    # /refer-and-win -> refer-and-win.php
+    RewriteRule ^call-and-win/?$ call-and-win.php [L,QSA]
+    RewriteRule ^refer-and-win/?$ refer-and-win.php [L,QSA]
+</IfModule>

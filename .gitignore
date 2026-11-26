@@ -1,0 +1,19 @@
+# Local environment & configuration
+.env
+.env.*
+!.env.example
+config/config.php
+
+# Runtime logs and call data
+logs/*
+!logs/.gitkeep
+storage/sessions/*
+!storage/sessions/.gitkeep
+storage/recordings/*
+!storage/recordings/.gitkeep
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
