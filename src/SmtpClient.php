@@ -56,6 +56,7 @@ final class SmtpClient
                 'verify_peer' => $this->verifyPeer,
                 'verify_peer_name' => $this->verifyPeer,
                 'allow_self_signed' => !$this->verifyPeer,
+                'peer_name' => $this->host,
             ],
         ];
         $context = stream_context_create($contextOptions);
@@ -79,9 +80,19 @@ final class SmtpClient
             if ($this->encryption === 'starttls') {
                 $this->command($socket, 'STARTTLS', [220]);
                 $cryptoMethod = STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT;
-                $enabled = @stream_socket_enable_crypto($socket, true, $cryptoMethod);
+                $cryptoError = '';
+                set_error_handler(static function (int $severity, string $message) use (&$cryptoError): bool {
+                    $cryptoError .= ($cryptoError !== '' ? '; ' : '') . $message;
+                    return true;
+                });
+                try {
+                    $enabled = stream_socket_enable_crypto($socket, true, $cryptoMethod);
+                } finally {
+                    restore_error_handler();
+                }
                 if ($enabled !== true) {
-                    throw new \RuntimeException('Failed to negotiate STARTTLS encryption.');
+                    $detail = $cryptoError !== '' ? ' (' . $cryptoError . ')' : '';
+                    throw new \RuntimeException('Failed to negotiate STARTTLS encryption.' . $detail);
                 }
                 $ehloResp = $this->command($socket, 'EHLO ' . $this->ehloHost, [250]);
             }
